@@ -1,16 +1,18 @@
 """Module containing classes / functions for PID generation."""
 import sys
+from configparser import SectionProxy
+
 import requests
 from fastapi import HTTPException
 from typing import Union
 
-from requests import HTTPError, Timeout, TooManyRedirects, RequestException
+from requests import HTTPError, Timeout, TooManyRedirects, Session
 
 
 class PidGenerator:
     """The PidGenerator class."""
 
-    def __init__(self, options, session=requests.Session()):
+    def __init__(self, options: SectionProxy, session=requests.Session()):
         self._options = options
         self._session = self._init_session(options, session)
         self._types = {
@@ -24,7 +26,7 @@ class PidGenerator:
             self._session.delete(session_url)
             self._session.close()
 
-    def generate_pid(self, type, uuid):
+    def generate_pid(self, type: str, uuid: str) -> str:
         """Generates PID from given UUID."""
         server_url = f'{self._options["handle_server_url"]}api/handles/'
         prefix = self._options['prefix']
@@ -57,7 +59,7 @@ class PidGenerator:
 
         return f'https://hdl.handle.net/{res.json()["handle"]}'
 
-    def _init_session(self, options, session):
+    def _init_session(self, options: SectionProxy, session: Session) -> Session:
         session.verify = self.str2bool(options['ca_verify'])
         session.headers['Content-Type'] = 'application/json'
 
@@ -72,14 +74,14 @@ class PidGenerator:
 
         return session
 
-    def _get_payload(self, target):
+    def _get_payload(self, target_url: str) -> dict:
         return {
             'values': [{
                 'index': 1,
                 'type': 'URL',
                 'data': {
                     'format': 'string',
-                    'value': target
+                    'value': target_url
                 }
             }, {
                 'index': 100,
