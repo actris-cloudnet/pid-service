@@ -3,7 +3,7 @@ import requests
 import requests_mock
 from fastapi import HTTPException
 
-import pid_service
+from pid_service import pid_service
 
 options = dict(
     handle_server_url='mock://test/',
@@ -71,6 +71,15 @@ class TestPidService:
 
         with pytest.raises(HTTPException):
             pid_gen.generate_pid('wtf', 'fail')
+
+
+    def test_str2bool(self, session_adapter):
+        session, adapter = session_adapter
+        pid_gen = pid_service.PidGenerator(options, session=session)
+        assert pid_gen.str2bool('True') is True
+        assert pid_gen.str2bool('False') is False
+        assert pid_gen.str2bool('kissa') == 'kissa'
+
 
 
 def validate_request(expected_target_url):

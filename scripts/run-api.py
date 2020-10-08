@@ -2,17 +2,19 @@
 """A script for assigning PIDs for data files."""
 import argparse
 import configparser
+
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
-import pid_service
+
+from pid_service import pid_service
 
 
-def read_config(config_dir):
+def read_config(config_dir: str) -> configparser.ConfigParser:
     config_path = f'{config_dir}/main.ini'
-    config = configparser.ConfigParser()
-    config.read_file(open(config_path, 'r'))
-    return config
+    conf_parser = configparser.ConfigParser()
+    conf_parser.read_file(open(config_path, 'r'))
+    return conf_parser
 
 
 app = FastAPI()

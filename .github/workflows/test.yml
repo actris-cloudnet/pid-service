@@ -1,4 +1,4 @@
-name: Cloudnet processing CI
+name: PID-service CI
 
 on: [push]
 
