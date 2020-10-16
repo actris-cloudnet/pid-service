@@ -36,11 +36,11 @@ class TestPidService:
     def test_generate_pid_for_file(self, session_adapter):
         session, adapter = session_adapter
         adapter.register_uri('PUT', 'mock://test/api/handles/21.T12995/1.be8154c1a6aa4f44',
-                             additional_matcher=validate_request('mock://test2/file/be8154c1a6aa4f44b953780b016987b5'),
+                             additional_matcher=validate_request('mock://test2/file/be815-4c1a6aa4f4-4b953780b016-987b5'),
                              json=handle_response)
 
         pid_gen = pid_service.PidGenerator(options, session=session)
-        pid = pid_gen.generate_pid('file', 'be8154c1a6aa4f44b953780b016987b5')
+        pid = pid_gen.generate_pid('file', 'be815-4c1a6aa4f4-4b953780b016-987b5')
             
         assert pid == 'https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44'
 

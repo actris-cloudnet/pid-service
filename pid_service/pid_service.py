@@ -33,11 +33,11 @@ class PidGenerator:
             raise HTTPException(status_code=422, detail=f"Unknown type: {type}")
 
         typeid = self._types[type]
-        short_uuid = uuid[:16]
+        uuid_nodashes = uuid.replace('-', '')
+        short_uuid = uuid_nodashes[:16]
         suffix = f'{typeid}.{short_uuid}'
         handle = f'{prefix}/{suffix}'
         target_url = '/'.join([self._options["resolve_to_url"], type, uuid])
-        print(target_url)
 
         try:
             res = self._session.put(f'{server_url}{handle}',
