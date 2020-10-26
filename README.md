@@ -1,7 +1,7 @@
 # PID service
 ![](https://github.com/actris-cloudnet/pid-service/workflows/PID-service%20CI/badge.svg)
 
-A gateway service for minting persistent identifiers with handle.net server.
+A gateway service for minting persistent identifiers with a handle.net server.
 
 ## Installation
 
@@ -34,4 +34,4 @@ Example:
     $ curl -d '{"type":"file","uuid":"42092c00-161d-4ca2-a29d-628cf8e960f6"}' -H"content-type: application/json" http://localhost:5800/pid/
     {"pid":"https://hdl.handle.net/21.T12995/1.42092c00161d4ca2"}
     
-Navigating to https://hdl.handle.net/21.T12995/1.42092c00161d4ca2 will now redirect to `http://localhost:8080/file/42092c00-161d-4ca2-a29d-628cf8e960f6, if using the default configuration.
+Navigating to `https://hdl.handle.net/21.T12995/1.42092c00161d4ca2` will now redirect to `http://localhost:8080/file/42092c00-161d-4ca2-a29d-628cf8e960f6`, if using the default configuration.
