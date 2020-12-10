@@ -44,6 +44,11 @@ class PidGenerator:
                                     json=self._get_payload(target_url))
             res.raise_for_status()
         except HTTPError:
+            if res.status_code == 401:
+                self._session = self._init_session(self._options, requests.Session())
+                raise HTTPException(
+                    status_code=503,
+                    detail=f'Upstream PID service failed with status 401, resetting session.')
             raise HTTPException(
                 status_code=502,
                 detail=f'Upstream PID service failed with status {res.status_code}:\n{res.text}')
