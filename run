@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker exec -t docker-common_pid-service_1 "$@"
+
