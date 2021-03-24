@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker exec -t docker-common_pid-service_1 "$@"
+docker exec -t dev-toolkit_pid-service_1 "$@"
 
