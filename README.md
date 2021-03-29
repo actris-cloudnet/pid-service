@@ -1,5 +1,5 @@
 # PID service
-![](https://github.com/actris-cloudnet/pid-service/workflows/PID-service%20CI/badge.svg)
+![](https://github.com/actris-cloudnet/pid-service/workflows/Test%20and%20lint/badge.svg)
 
 A gateway service for minting persistent identifiers with a handle.net server.
 
