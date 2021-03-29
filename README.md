@@ -1,17 +1,13 @@
 # PID service
-![](https://github.com/actris-cloudnet/pid-service/workflows/PID-service%20CI/badge.svg)
+![](https://github.com/actris-cloudnet/pid-service/workflows/Test%20and%20lint/badge.svg)
 
 A gateway service for minting persistent identifiers with a handle.net server.
 
 ## Installation
 
-    $ git clone git@github.com:actris-cloudnet/pid-service.git
-    $ cd pid-service
-    $ python3 -m venv venv
-    $ source venv/bin/activate
-    (venv) $ pip3 install --upgrade pip
-    (venv) $ pip3 install .
+As a requirement, docker must be installed. Once docker is running, you may issue:
 
+    docker build -t pid-service --target prod .
 
 ## Configuration
 
@@ -19,9 +15,7 @@ A gateway service for minting persistent identifiers with a handle.net server.
 
 ## Running the server
 
-The server can be controlled via the `control` script at project root:
-- `./control start`
-- `./control stop`
+    docker run -p 5800:5800 pid-service
 
 ## Minting PIDs
 
@@ -35,3 +29,7 @@ Example:
     {"pid":"https://hdl.handle.net/21.T12995/1.42092c00161d4ca2"}
     
 Navigating to `https://hdl.handle.net/21.T12995/1.42092c00161d4ca2` will now redirect to `http://localhost:8080/file/42092c00-161d-4ca2-a29d-628cf8e960f6`, if using the default configuration.
+
+## License
+
+MIT
