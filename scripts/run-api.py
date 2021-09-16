@@ -5,34 +5,36 @@ import configparser
 
 import uvicorn
 from fastapi import FastAPI
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel
 
 from pid_service import pid_service
 
 
-def read_config(config_dir: str) -> configparser.ConfigParser:
-    """Reads the config file."""
-    config_path = f"{config_dir}/main.ini"
-    conf_parser = configparser.ConfigParser()
-    with open(config_path, "r", encoding="utf-8") as file:
-        conf_parser.read_file(file)
-    return conf_parser
+def read_config() -> dict:
+    env_config = {
+        'PID-SERVICE': {
+            'handle_server_url': env['PS_HANDLE_SERVER_URL'],
+            'prefix': env['PS_PREFIX'],
+            'certificate_only': env['PS_CERTIFICATE_ONLY'],
+            'private_key': env['PS_PRIVATE_KEY'],
+            'ca_verify': bool(env['PS_CA_VERIFY']),
+            'resolve_to_url': env['PS_RESOLVE_TO_URL']
+        },
+        'UVICORN': {
+            'host': '0.0.0.0',
+            'port': 5800,
+            'reload': bool(env['PS_UVICORN_RELOAD']),
+            'debug': bool(env['PS_UVICORN_DEBUG']),
+            'workers': 1
+        }
+    }
+    return env_config
 
 
 app = FastAPI()
 
-parser = argparse.ArgumentParser(description="Run API for minting PIDs")
-parser.add_argument(
-    "--config-dir",
-    type=str,
-    metavar="/FOO/BAR",
-    help="Path to directory containing config files. Default: ./config.",
-    default="./config",
-)
-ARGS = parser.parse_args()
-
-config = read_config(ARGS.config_dir)
-pid_gen = pid_service.PidGenerator(config["PID-SERVICE"])
+config = read_config()
+pid_gen = pid_service.PidGenerator(config['PID-SERVICE'])
 
 
 class PidRequest(BaseModel):  # pylint: disable=too-few-public-methods
