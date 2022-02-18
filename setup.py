@@ -2,11 +2,13 @@ from setuptools import setup, find_packages
 
 setup(name="PID-SERVICE",
       install_requires=['requests',
-                        'pytest',
-                        'pylint',
                         'pydantic',
-                        'requests_mock',
                         'fastapi',
                         'uvicorn',
                         ],
+      extras_require={'test': ['pytest',
+                               'pylint',
+                               'requests_mock',
+                               'mypy',
+                               'types-requests']},
       packages=find_packages())
