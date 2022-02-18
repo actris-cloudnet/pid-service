@@ -10,5 +10,6 @@ FROM base AS prod
 COPY . .
 CMD ["scripts/run-api.py"]
 
-FROM base AS test
+FROM base AS dev
 RUN pip3 install -e .[test]
+CMD ["scripts/run-api.py"]

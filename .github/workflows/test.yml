@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Build docker image
-        run: docker build -t test --target test .
+        run: docker build -t test --target dev .
 
       - name: Test
         run: docker run --rm -v $PWD:/app test pytest
