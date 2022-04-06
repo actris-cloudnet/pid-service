@@ -17,7 +17,7 @@ jobs:
         run: docker run --rm -v $PWD:/app test pytest
 
       - name: Lint
-        run: docker run --rm -v $PWD:/app test pylint **/*.py --errors-only --ignored-modules=netCDF4
+        run: docker run --rm -v $PWD:/app test pylint pid_service/ scripts/
 
       - name: Typecheck
-        run: docker run --rm -v $PWD:/app test mypy --ignore-missing-imports pid_service scripts
+        run: docker run --rm -v $PWD:/app test mypy --ignore-missing-imports pid_service/ scripts/
