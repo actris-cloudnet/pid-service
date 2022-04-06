@@ -1,3 +1,4 @@
+exclude: ^config/private/
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
@@ -30,7 +31,7 @@ repos:
         types: [python]
         require_serial: true
         args: ["--jobs=4"]
-        exclude: ^(tests/)
+        exclude: ^tests/
       - id: mypy
         name: mypy
         entry: mypy
@@ -38,4 +39,4 @@ repos:
         types: [python]
         require_serial: true
         args: ["--ignore-missing-imports"]
-        exclude: ^(tests/)
+        exclude: ^tests/
