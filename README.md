@@ -24,10 +24,10 @@ By default, the server listens to `localhost:5800`. To mint a PID, send a `POST`
 - `uuid`: UUID of the resource for which the PID is generated.
 
 Example:
-   
+
     $ curl -d '{"type":"file","uuid":"42092c00-161d-4ca2-a29d-628cf8e960f6"}' -H"content-type: application/json" http://localhost:5800/pid/
     {"pid":"https://hdl.handle.net/21.T12995/1.42092c00161d4ca2"}
-    
+
 Navigating to `https://hdl.handle.net/21.T12995/1.42092c00161d4ca2` will now redirect to `http://localhost:8080/file/42092c00-161d-4ca2-a29d-628cf8e960f6`, if using the default configuration.
 
 ## License

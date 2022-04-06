@@ -25,4 +25,3 @@ curl -i -v -k --key $PRIVKEY --cert $CERTIFICATE \
     -H 'Authorization: Handle clientCert="true"' \
     -X PUT --data $DATA \
     $PID_SERVER/$PREFIX/$SUFFIX
-
