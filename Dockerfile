@@ -6,10 +6,11 @@ COPY setup.py .
 RUN pip3 install --upgrade pip
 RUN pip3 install .
 
-FROM base AS prod
-COPY . .
-CMD ["scripts/run-api.py"]
-
 FROM base AS dev
 RUN pip3 install -e .[test]
+CMD ["scripts/run-api.py"]
+
+FROM base AS prod
+COPY . .
+RUN pip3 install .
 CMD ["scripts/run-api.py"]
