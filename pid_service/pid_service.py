@@ -14,7 +14,7 @@ class PidGenerator:
     def __init__(self, options: SectionProxy, session=requests.Session()):
         self._options = options
         self._session = self._init_session(options, session)
-        self._types = {"file": "1", "collection": "2"}
+        self._types = {"file": "1", "collection": "2", "instrument": "3"}
 
     def __del__(self):
         if hasattr(self, "_session"):
@@ -35,7 +35,10 @@ class PidGenerator:
         short_uuid = uuid_nodashes[:16]
         suffix = f"{typeid}.{short_uuid}"
         handle = f"{prefix}/{suffix}"
-        target_url = "/".join([self._options["resolve_to_url"], pid_type, uuid])
+        if pid_type in ("file", "collection"):
+            target_url = f"https://cloudnet.fmi.fi/{pid_type}/{uuid}"
+        else:
+            target_url = f"https://instrumentdb.out.ocp.fmi.fi/instrument/{uuid}"
 
         try:
             res = self._session.put(f"{server_url}{handle}", json=self._get_payload(target_url))

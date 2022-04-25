@@ -1,32 +1,31 @@
 #!/usr/bin/env python3
 """A script for assigning PIDs for data files."""
-import argparse
-import configparser
+from os import environ as env
 
 import uvicorn
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
 from pid_service import pid_service
 
 
 def read_config() -> dict:
+    """Read config function."""
     env_config = {
-        'PID-SERVICE': {
-            'handle_server_url': env['PS_HANDLE_SERVER_URL'],
-            'prefix': env['PS_PREFIX'],
-            'certificate_only': env['PS_CERTIFICATE_ONLY'],
-            'private_key': env['PS_PRIVATE_KEY'],
-            'ca_verify': bool(env['PS_CA_VERIFY']),
-            'resolve_to_url': env['PS_RESOLVE_TO_URL']
+        "PID-SERVICE": {
+            "handle_server_url": env["PS_HANDLE_SERVER_URL"],
+            "prefix": env["PS_PREFIX"],
+            "certificate_only": env["PS_CERTIFICATE_ONLY"],
+            "private_key": env["PS_PRIVATE_KEY"],
+            "ca_verify": bool(env["PS_CA_VERIFY"]),
         },
-        'UVICORN': {
-            'host': '0.0.0.0',
-            'port': 5800,
-            'reload': bool(env['PS_UVICORN_RELOAD']),
-            'debug': bool(env['PS_UVICORN_DEBUG']),
-            'workers': 1
-        }
+        "UVICORN": {
+            "host": "0.0.0.0",
+            "port": 5800,
+            "reload": bool(env["PS_UVICORN_RELOAD"]),
+            "debug": bool(env["PS_UVICORN_DEBUG"]),
+            "workers": 1,
+        },
     }
     return env_config
 
@@ -34,7 +33,7 @@ def read_config() -> dict:
 app = FastAPI()
 
 config = read_config()
-pid_gen = pid_service.PidGenerator(config['PID-SERVICE'])
+pid_gen = pid_service.PidGenerator(config["PID-SERVICE"])
 
 
 class PidRequest(BaseModel):  # pylint: disable=too-few-public-methods

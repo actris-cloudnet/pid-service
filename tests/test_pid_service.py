@@ -11,7 +11,6 @@ options = dict(
     certificate_only=None,
     private_key=None,
     ca_verify="False",
-    resolve_to_url="mock://test2",
 )
 
 handle_response = {"responseCode": 1, "handle": "21.T12995/1.be8154c1a6aa4f44"}
@@ -42,7 +41,7 @@ class TestPidService:
             "PUT",
             "mock://test/api/handles/21.T12995/1.be8154c1a6aa4f44",
             additional_matcher=validate_request(
-                "mock://test2/file/be815-4c1a6aa4f4-4b953780b016-987b5"
+                "https://cloudnet.fmi.fi/file/be815-4c1a6aa4f4-4b953780b016-987b5"
             ),
             json=handle_response,
         )
@@ -58,7 +57,7 @@ class TestPidService:
             "PUT",
             "mock://test/api/handles/21.T12995/2.ce8154c1a6aa4f44",
             additional_matcher=validate_request(
-                "mock://test2/collection/ce8154c1a6aa4f44b953780b016987b5"
+                "https://cloudnet.fmi.fi/collection/ce8154c1a6aa4f44b953780b016987b5"
             ),
             json=handle_response,
         )
@@ -66,6 +65,21 @@ class TestPidService:
         pid_gen = pid_service.PidGenerator(options, session=session)
         pid = pid_gen.generate_pid("collection", "ce8154c1a6aa4f44b953780b016987b5")
 
+        assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
+
+    def test_generate_pid_for_instrument(self, session_adapter):
+        session, adapter = session_adapter
+        adapter.register_uri(
+            "PUT",
+            "mock://test/api/handles/21.T12995/3.ce8154c1a6aa4f44",
+            additional_matcher=validate_request(
+                "https://instrumentdb.out.ocp.fmi.fi/instrument/ce8154c1a6aa4f44b953780b016987b5"
+            ),
+            json=handle_response,
+        )
+
+        pid_gen = pid_service.PidGenerator(options, session=session)
+        pid = pid_gen.generate_pid("instrument", "ce8154c1a6aa4f44b953780b016987b5")
         assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
 
     def test_raises_error_on_failed_request(self, session_adapter):
