@@ -13,8 +13,6 @@ options = dict(
     ca_verify="False",
 )
 
-handle_response = {"responseCode": 1, "handle": "21.T12995/1.be8154c1a6aa4f44"}
-
 
 @pytest.fixture(scope="session")
 def session_adapter(tmpdir_factory):
@@ -41,13 +39,17 @@ class TestPidService:
             "PUT",
             "mock://test/api/handles/21.T12995/1.be8154c1a6aa4f44",
             additional_matcher=validate_request(
-                "https://cloudnet.fmi.fi/file/be815-4c1a6aa4f4-4b953780b016-987b5"
+                "mock://test2/file/be8154c1-a6aa-4f44-b953-780b016987b5"
             ),
-            json=handle_response,
+            json={"responseCode": 1, "handle": "21.T12995/1.be8154c1a6aa4f44"},
         )
 
         pid_gen = pid_service.PidGenerator(options, session=session)
-        pid = pid_gen.generate_pid("file", "be815-4c1a6aa4f4-4b953780b016-987b5")
+        pid = pid_gen.generate_pid(
+            "file",
+            "be8154c1-a6aa-4f44-b953-780b016987b5",
+            "mock://test2/file/be8154c1-a6aa-4f44-b953-780b016987b5",
+        )
 
         assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
 
@@ -57,30 +59,38 @@ class TestPidService:
             "PUT",
             "mock://test/api/handles/21.T12995/2.ce8154c1a6aa4f44",
             additional_matcher=validate_request(
-                "https://cloudnet.fmi.fi/collection/ce8154c1a6aa4f44b953780b016987b5"
+                "mock://test2/collection/ce8154c1-a6aa-4f44-b953-780b016987b5"
             ),
-            json=handle_response,
+            json={"responseCode": 1, "handle": "21.T12995/2.ce8154c1a6aa4f44"},
         )
 
         pid_gen = pid_service.PidGenerator(options, session=session)
-        pid = pid_gen.generate_pid("collection", "ce8154c1a6aa4f44b953780b016987b5")
+        pid = pid_gen.generate_pid(
+            "collection",
+            "ce8154c1-a6aa-4f44-b953-780b016987b5",
+            "mock://test2/collection/ce8154c1-a6aa-4f44-b953-780b016987b5",
+        )
 
-        assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
+        assert pid == "https://hdl.handle.net/21.T12995/2.ce8154c1a6aa4f44"
 
     def test_generate_pid_for_instrument(self, session_adapter):
         session, adapter = session_adapter
         adapter.register_uri(
             "PUT",
-            "mock://test/api/handles/21.T12995/3.ce8154c1a6aa4f44",
+            "mock://test/api/handles/21.T12995/3.8c1680f6b530499a",
             additional_matcher=validate_request(
-                "https://instrumentdb.out.ocp.fmi.fi/instrument/ce8154c1a6aa4f44b953780b016987b5"
+                "mock://test2/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf"
             ),
-            json=handle_response,
+            json={"responseCode": 1, "handle": "21.T12995/3.8c1680f6b530499a"},
         )
 
         pid_gen = pid_service.PidGenerator(options, session=session)
-        pid = pid_gen.generate_pid("instrument", "ce8154c1a6aa4f44b953780b016987b5")
-        assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
+        pid = pid_gen.generate_pid(
+            "instrument",
+            "8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+            "mock://test2/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+        )
+        assert pid == "https://hdl.handle.net/21.T12995/3.8c1680f6b530499a"
 
     def test_raises_error_on_failed_request(self, session_adapter):
         session, adapter = session_adapter
@@ -89,7 +99,7 @@ class TestPidService:
         pid_gen = pid_service.PidGenerator(options, session=session)
 
         with pytest.raises(HTTPException):
-            pid_gen.generate_pid("file", "fail")
+            pid_gen.generate_pid("file", "fail", "mock://test2/fail")
 
     def test_raises_error_on_unknown_type(self, session_adapter):
         session, adapter = session_adapter
@@ -97,7 +107,7 @@ class TestPidService:
         pid_gen = pid_service.PidGenerator(options, session=session)
 
         with pytest.raises(HTTPException):
-            pid_gen.generate_pid("wtf", "fail")
+            pid_gen.generate_pid("wtf", "fail", "mock://test2/fail")
 
     def test_str2bool(self, session_adapter):
         session, adapter = session_adapter

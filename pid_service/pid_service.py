@@ -22,7 +22,7 @@ class PidGenerator:
             self._session.delete(session_url)
             self._session.close()
 
-    def generate_pid(self, pid_type: str, uuid: str) -> str:
+    def generate_pid(self, pid_type: str, uuid: str, url: str) -> str:
         """Generates PID from given UUID."""
         server_url = f'{self._options["handle_server_url"]}api/handles/'
         prefix = self._options["prefix"]
@@ -35,13 +35,9 @@ class PidGenerator:
         short_uuid = uuid_nodashes[:16]
         suffix = f"{typeid}.{short_uuid}"
         handle = f"{prefix}/{suffix}"
-        if pid_type in ("file", "collection"):
-            target_url = f"https://cloudnet.fmi.fi/{pid_type}/{uuid}"
-        else:
-            target_url = f"https://instrumentdb.out.ocp.fmi.fi/instrument/{uuid}"
 
         try:
-            res = self._session.put(f"{server_url}{handle}", json=self._get_payload(target_url))
+            res = self._session.put(f"{server_url}{handle}", json=self._get_payload(url))
             res.raise_for_status()
         except HTTPError as err:
             if res.status_code == 401:

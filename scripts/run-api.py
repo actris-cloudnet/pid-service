@@ -41,12 +41,13 @@ class PidRequest(BaseModel):  # pylint: disable=too-few-public-methods
 
     type: str
     uuid: str
+    url: str
 
 
 @app.post("/pid/")
 def generate_pid(pid_request: PidRequest):
     """Generates PID."""
-    pid = pid_gen.generate_pid(pid_request.type, pid_request.uuid)
+    pid = pid_gen.generate_pid(pid_request.type, pid_request.uuid, pid_request.url)
     return {"pid": pid}
 
 
