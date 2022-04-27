@@ -12,9 +12,9 @@ issue:
 
 ## Configuration
 
-`config/main.ini` contains the configuration for the service. Note that you
-will need a private key and certificate to use the handle.net service. Contact
-your handle.net service provider for these.
+The service is configured with environment variables, see `.env` for more
+information. Note that you will need a private key and certificate to use the
+handle.net service. Contact your handle.net service provider for these.
 
 ## Running the server
 
