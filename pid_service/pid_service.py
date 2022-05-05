@@ -1,6 +1,7 @@
 """pid-service module"""
 import sys
 from enum import Enum
+from typing import List
 from uuid import UUID
 
 import requests
@@ -11,18 +12,22 @@ from requests import HTTPError, Session, Timeout, TooManyRedirects
 from .config import Settings
 
 
+class PidData(BaseModel):
+    type: str
+    value: str
+
+
 class PidType(str, Enum):
     FILE = "file"
     COLLECTION = "collection"
     INSTRUMENT = "instrument"
 
 
-class PidRequest(BaseModel):  # pylint: disable=too-few-public-methods
-    """PidRequest class."""
-
+class PidRequest(BaseModel):
     type: PidType
     uuid: UUID
     url: HttpUrl
+    data: List[PidData] = []
 
 
 class PidGenerator:
@@ -96,6 +101,17 @@ class PidGenerator:
         return {
             "values": [
                 {"index": 1, "type": "URL", "data": {"format": "string", "value": request.url}},
+                *[
+                    {
+                        "index": i + 2,
+                        "type": item.type,
+                        "data": {
+                            "format": "string",
+                            "value": item.value,
+                        },
+                    }
+                    for i, item in enumerate(request.data)
+                ],
                 {
                     "index": 100,
                     "type": "HS_ADMIN",

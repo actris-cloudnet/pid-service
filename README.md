@@ -29,6 +29,9 @@ fields:
 - `type`: either *file*, *collection* or *instrument*.
 - `uuid`: UUID of the resource for which the PID is generated.
 - `url`: landing page where the PID should resolve to
+- `data`: extra data to store in the PID, an array of objects with following properties:
+    - `type`: data type, usually another PID.
+    - `value`: value as a string.
 
 Example:
 
