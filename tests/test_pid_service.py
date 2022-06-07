@@ -85,22 +85,13 @@ class TestPidService:
         with pytest.raises(HTTPException):
             pid_gen.generate_pid("wtf", "fail")
 
-    def test_str2bool(self, session_adapter):
-        session, adapter = session_adapter
-        pid_gen = pid_service.PidGenerator(options, session=session)
-        assert pid_gen.str2bool("True") is True
-        assert pid_gen.str2bool("False") is False
-        assert pid_gen.str2bool("kissa") == "kissa"
-
 
 def validate_request(expected_target_url):
     def is_valid_json(request):
-        json = {}
         try:
             json = request.json()
         except ValueError:
             return False
-        print(json)
         return json["values"][0]["data"]["value"] == expected_target_url
 
     return is_valid_json

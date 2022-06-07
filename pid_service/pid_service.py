@@ -2,7 +2,6 @@
 import os
 import sys
 from configparser import SectionProxy
-from typing import Union
 
 import requests
 from fastapi import HTTPException
@@ -63,17 +62,18 @@ class PidGenerator:
 
         return f'https://hdl.handle.net/{res.json()["handle"]}'
 
-    def _init_session(self, options: SectionProxy, session: Session) -> Session:
+    @staticmethod
+    def _init_session(options: SectionProxy, session: Session) -> Session:
         """Initialize session with Handle server."""
         if os.environ.get("NODE_ENV") != "production":
             return session
-        session.verify = self.str2bool(options["ca_verify"])
+        session.verify = options["ca_verify"] == "True"
         session.headers["Content-Type"] = "application/json"
 
         # Authenticate session
         session_url = f'{options["handle_server_url"]}api/sessions'
         session.headers["Authorization"] = 'Handle clientCert="true"'
-        cert = (self.str2bool(options["certificate_only"]), self.str2bool(options["private_key"]))
+        cert = (options["certificate_only"], options["private_key"])
         res = session.post(session_url, cert=cert)
         res.raise_for_status()
         session_id = res.json()["sessionId"]
@@ -100,8 +100,3 @@ class PidGenerator:
                 },
             ]
         }
-
-    @staticmethod
-    def str2bool(the_string: str) -> Union[bool, str]:
-        """Converts string to bool"""
-        return False if the_string == "False" else True if the_string == "True" else the_string
