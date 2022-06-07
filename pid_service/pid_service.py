@@ -1,4 +1,5 @@
 """pid-service module"""
+import os
 import sys
 from configparser import SectionProxy
 from typing import Union
@@ -64,6 +65,8 @@ class PidGenerator:
 
     def _init_session(self, options: SectionProxy, session: Session) -> Session:
         """Initialize session with Handle server."""
+        if os.environ.get("NODE_ENV") != "production":
+            return session
         session.verify = self.str2bool(options["ca_verify"])
         session.headers["Content-Type"] = "application/json"
 
