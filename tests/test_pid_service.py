@@ -2,23 +2,22 @@ import pytest
 import requests
 import requests_mock
 from fastapi import HTTPException
+from pydantic import ValidationError
 
-from pid_service import pid_service
+from pid_service.config import Settings
+from pid_service.pid_service import PidGenerator, PidRequest
 
-options = dict(
-    handle_server_url="mock://test/",
+options = Settings(
+    handle_server_url="mock://hdl.svc/",
     prefix="21.T12995",
     certificate_only=None,
     private_key=None,
-    ca_verify="False",
-    resolve_to_url="mock://test2",
+    ca_verify=False,
 )
-
-handle_response = {"responseCode": 1, "handle": "21.T12995/1.be8154c1a6aa4f44"}
 
 
 @pytest.fixture(scope="session")
-def session_adapter(tmpdir_factory):
+def session_adapter():
     adapter = requests_mock.Adapter()
     session = requests.Session()
     session.mount("mock://", adapter)
@@ -29,8 +28,8 @@ def session_adapter(tmpdir_factory):
         "authenticated": True,
         "id": "309:21.T12995/USER01",
     }
-    adapter.register_uri("POST", "mock://test/api/sessions", json=sess_response)
-    adapter.register_uri("DELETE", "mock://test/api/sessions/this")
+    adapter.register_uri("POST", "mock://hdl.svc/api/sessions", json=sess_response)
+    adapter.register_uri("DELETE", "mock://hdl.svc/api/sessions/this")
 
     return session, adapter
 
@@ -40,15 +39,20 @@ class TestPidService:
         session, adapter = session_adapter
         adapter.register_uri(
             "PUT",
-            "mock://test/api/handles/21.T12995/1.be8154c1a6aa4f44",
+            "mock://hdl.svc/api/handles/21.T12995/1.be8154c1a6aa4f44",
             additional_matcher=validate_request(
-                "mock://test2/file/be815-4c1a6aa4f4-4b953780b016-987b5"
+                [("URL", "http://example.org/file/be8154c1-a6aa-4f44-b953-780b016987b5")]
             ),
-            json=handle_response,
+            json={"responseCode": 1, "handle": "21.T12995/1.be8154c1a6aa4f44"},
         )
 
-        pid_gen = pid_service.PidGenerator(options, session=session)
-        pid = pid_gen.generate_pid("file", "be815-4c1a6aa4f4-4b953780b016-987b5")
+        request = {
+            "type": "file",
+            "uuid": "be8154c1-a6aa-4f44-b953-780b016987b5",
+            "url": "http://example.org/file/be8154c1-a6aa-4f44-b953-780b016987b5",
+        }
+        pid_gen = PidGenerator(options, session=session)
+        pid = pid_gen.generate_pid(PidRequest(**request))
 
         assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
 
@@ -56,51 +60,97 @@ class TestPidService:
         session, adapter = session_adapter
         adapter.register_uri(
             "PUT",
-            "mock://test/api/handles/21.T12995/2.ce8154c1a6aa4f44",
+            "mock://hdl.svc/api/handles/21.T12995/2.ce8154c1a6aa4f44",
             additional_matcher=validate_request(
-                "mock://test2/collection/ce8154c1a6aa4f44b953780b016987b5"
+                [("URL", "http://example.org/collection/ce8154c1-a6aa-4f44-b953-780b016987b5")]
             ),
-            json=handle_response,
+            json={"responseCode": 1, "handle": "21.T12995/2.ce8154c1a6aa4f44"},
         )
 
-        pid_gen = pid_service.PidGenerator(options, session=session)
-        pid = pid_gen.generate_pid("collection", "ce8154c1a6aa4f44b953780b016987b5")
+        request = {
+            "type": "collection",
+            "uuid": "ce8154c1-a6aa-4f44-b953-780b016987b5",
+            "url": "http://example.org/collection/ce8154c1-a6aa-4f44-b953-780b016987b5",
+        }
+        pid_gen = PidGenerator(options, session=session)
+        pid = pid_gen.generate_pid(PidRequest(**request))
 
-        assert pid == "https://hdl.handle.net/21.T12995/1.be8154c1a6aa4f44"
+        assert pid == "https://hdl.handle.net/21.T12995/2.ce8154c1a6aa4f44"
+
+    def test_generate_pid_for_instrument(self, session_adapter):
+        session, adapter = session_adapter
+        adapter.register_uri(
+            "PUT",
+            "mock://hdl.svc/api/handles/21.T12995/3.8c1680f6b530499a",
+            additional_matcher=validate_request(
+                [("URL", "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf")]
+            ),
+            json={"responseCode": 1, "handle": "21.T12995/3.8c1680f6b530499a"},
+        )
+
+        request = {
+            "type": "instrument",
+            "uuid": "8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+            "url": "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+        }
+        pid_gen = PidGenerator(options, session=session)
+        pid = pid_gen.generate_pid(PidRequest(**request))
+
+        assert pid == "https://hdl.handle.net/21.T12995/3.8c1680f6b530499a"
+
+    def test_generate_pid_with_data(self, session_adapter):
+        session, adapter = session_adapter
+        adapter.register_uri(
+            "PUT",
+            "mock://hdl.svc/api/handles/21.T12995/3.8c1680f6b530499a",
+            additional_matcher=validate_request(
+                [
+                    ("URL", "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf"),
+                    ("msg", "hello world"),
+                ]
+            ),
+            json={"responseCode": 1, "handle": "21.T12995/3.8c1680f6b530499a"},
+        )
+
+        request = {
+            "type": "instrument",
+            "uuid": "8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+            "url": "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+            "data": [{"type": "msg", "value": "hello world"}],
+        }
+        pid_gen = PidGenerator(options, session=session)
+        pid = pid_gen.generate_pid(PidRequest(**request))
+
+        assert pid == "https://hdl.handle.net/21.T12995/3.8c1680f6b530499a"
 
     def test_raises_error_on_failed_request(self, session_adapter):
         session, adapter = session_adapter
-        adapter.register_uri("PUT", "mock://test/api/handles/21.T12995/1.fail", status_code=403)
+        adapter.register_uri(
+            "PUT", "mock://hdl.svc/api/handles/21.T12995/1.ac310789d9844172", status_code=403
+        )
 
-        pid_gen = pid_service.PidGenerator(options, session=session)
+        request = {
+            "type": "file",
+            "uuid": "ac310789-d984-4172-84b7-84a4a2288af5",
+            "url": "http://example.org/file/ac310789-d984-4172-84b7-84a4a2288af5",
+        }
+
+        pid_gen = PidGenerator(options, session=session)
 
         with pytest.raises(HTTPException):
-            pid_gen.generate_pid("file", "fail")
-
-    def test_raises_error_on_unknown_type(self, session_adapter):
-        session, adapter = session_adapter
-
-        pid_gen = pid_service.PidGenerator(options, session=session)
-
-        with pytest.raises(HTTPException):
-            pid_gen.generate_pid("wtf", "fail")
-
-    def test_str2bool(self, session_adapter):
-        session, adapter = session_adapter
-        pid_gen = pid_service.PidGenerator(options, session=session)
-        assert pid_gen.str2bool("True") is True
-        assert pid_gen.str2bool("False") is False
-        assert pid_gen.str2bool("kissa") == "kissa"
+            pid_gen.generate_pid(PidRequest(**request))
 
 
-def validate_request(expected_target_url):
+def validate_request(expected_values):
     def is_valid_json(request):
-        json = {}
+        data = {}
         try:
-            json = request.json()
+            data = request.json()
         except ValueError:
             return False
-        print(json)
-        return json["values"][0]["data"]["value"] == expected_target_url
+        for (expected_type, expected_value), item in zip(expected_values, data["values"]):
+            if item["type"] != expected_type or item["data"]["value"] != expected_value:
+                return False
+        return True
 
     return is_valid_json

@@ -1,56 +1,71 @@
 """pid-service module"""
 import sys
-from configparser import SectionProxy
-from typing import Union
+from enum import Enum
+from typing import List
+from uuid import UUID
 
 import requests
 from fastapi import HTTPException
+from pydantic import BaseModel, HttpUrl
 from requests import HTTPError, Session, Timeout, TooManyRedirects
+
+from .config import Settings
+
+
+class PidData(BaseModel):
+    type: str
+    value: str
+
+
+class PidType(str, Enum):
+    FILE = "file"
+    COLLECTION = "collection"
+    INSTRUMENT = "instrument"
+
+
+class PidRequest(BaseModel):
+    type: PidType
+    uuid: UUID
+    url: HttpUrl
+    data: List[PidData] = []
 
 
 class PidGenerator:
     """A class for interfacing with Handle-server."""
 
-    def __init__(self, options: SectionProxy, session=requests.Session()):
-        self._options = options
-        self._session = self._init_session(options, session)
-        self._types = {"file": "1", "collection": "2"}
+    def __init__(self, settings: Settings, session=requests.Session()):
+        self._settings = settings
+        self._session = self._init_session(session)
+        self._types = {PidType.FILE: "1", PidType.COLLECTION: "2", PidType.INSTRUMENT: "3"}
 
     def __del__(self):
         if hasattr(self, "_session"):
-            session_url = f'{self._options["handle_server_url"]}api/sessions/this'
+            session_url = f"{self._settings.handle_server_url}api/sessions/this"
             self._session.delete(session_url)
             self._session.close()
 
-    def generate_pid(self, pid_type: str, uuid: str) -> str:
+    def generate_pid(self, request: PidRequest) -> str:
         """Generates PID from given UUID."""
-        server_url = f'{self._options["handle_server_url"]}api/handles/'
-        prefix = self._options["prefix"]
 
-        if pid_type not in self._types:
-            raise HTTPException(status_code=422, detail=f"Unknown type: {pid_type}")
-
-        typeid = self._types[pid_type]
-        uuid_nodashes = uuid.replace("-", "")
-        short_uuid = uuid_nodashes[:16]
+        typeid = self._types[request.type]
+        short_uuid = request.uuid.hex[:16]
         suffix = f"{typeid}.{short_uuid}"
-        handle = f"{prefix}/{suffix}"
-        target_url = "/".join([self._options["resolve_to_url"], pid_type, uuid])
+        handle = f"{self._settings.prefix}/{suffix}"
 
         try:
-            res = self._session.put(f"{server_url}{handle}", json=self._get_payload(target_url))
+            server_url = f"{self._settings.handle_server_url}api/handles/{handle}"
+            res = self._session.put(server_url, json=self._get_payload(request))
             res.raise_for_status()
         except HTTPError as err:
             if res.status_code == 401:
-                self._session = self._init_session(self._options, requests.Session())
+                self._session = self._init_session(requests.Session())
                 raise HTTPException(
                     status_code=503,
-                    detail="Upstream PID service failed with status 401, " "resetting session.",
+                    detail="Upstream PID service failed with status 401, resetting session.",
                 ) from err
             raise HTTPException(
                 status_code=502,
-                detail=f"Upstream PID service failed with status "
-                f"{res.status_code}:\n{res.text}",
+                detail=f"Upstream PID service failed with status {res.status_code}:\n{res.text}",
             ) from err
         except (ConnectionError, TooManyRedirects, Timeout) as err:
             raise HTTPException(
@@ -62,15 +77,18 @@ class PidGenerator:
 
         return f'https://hdl.handle.net/{res.json()["handle"]}'
 
-    def _init_session(self, options: SectionProxy, session: Session) -> Session:
+    def _init_session(self, session: Session) -> Session:
         """Initialize session with Handle server."""
-        session.verify = self.str2bool(options["ca_verify"])
+        session.verify = self._settings.ca_verify
         session.headers["Content-Type"] = "application/json"
 
         # Authenticate session
-        session_url = f'{options["handle_server_url"]}api/sessions'
+        session_url = f"{self._settings.handle_server_url}api/sessions"
         session.headers["Authorization"] = 'Handle clientCert="true"'
-        cert = (self.str2bool(options["certificate_only"]), self.str2bool(options["private_key"]))
+        if self._settings.certificate_only and self._settings.private_key:
+            cert = (self._settings.certificate_only, self._settings.private_key)
+        else:
+            cert = None
         res = session.post(session_url, cert=cert)
         res.raise_for_status()
         session_id = res.json()["sessionId"]
@@ -78,18 +96,29 @@ class PidGenerator:
 
         return session
 
-    def _get_payload(self, target_url: str) -> dict:
+    def _get_payload(self, request: PidRequest) -> dict:
         """Form a Handle-compliant payload."""
         return {
             "values": [
-                {"index": 1, "type": "URL", "data": {"format": "string", "value": target_url}},
+                {"index": 1, "type": "URL", "data": {"format": "string", "value": request.url}},
+                *[
+                    {
+                        "index": i + 2,
+                        "type": item.type,
+                        "data": {
+                            "format": "string",
+                            "value": item.value,
+                        },
+                    }
+                    for i, item in enumerate(request.data)
+                ],
                 {
                     "index": 100,
                     "type": "HS_ADMIN",
                     "data": {
                         "format": "admin",
                         "value": {
-                            "handle": f'0.NA/{self._options["prefix"]}',
+                            "handle": f"0.NA/{self._settings.prefix}",
                             "index": 200,
                             "permissions": "011111110011",
                         },
@@ -97,8 +126,3 @@ class PidGenerator:
                 },
             ]
         }
-
-    @staticmethod
-    def str2bool(the_string: str) -> Union[bool, str]:
-        """Converts string to bool"""
-        return False if the_string == "False" else True if the_string == "True" else the_string
