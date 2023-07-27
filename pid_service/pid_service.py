@@ -36,7 +36,11 @@ class PidGenerator:
     def __init__(self, settings: Settings, session=requests.Session()):
         self._settings = settings
         self._session = self._init_session(session)
-        self._types = {PidType.FILE: "1", PidType.COLLECTION: "2", PidType.INSTRUMENT: "3"}
+        self._types = {
+            PidType.FILE: "1",
+            PidType.COLLECTION: "2",
+            PidType.INSTRUMENT: "3",
+        }
 
     def __del__(self):
         if hasattr(self, "_session"):
@@ -73,7 +77,10 @@ class PidGenerator:
             ) from err
 
         if res.status_code == 200:
-            print(f"WARN: Handle {handle} already exists, updating handle.", file=sys.stderr)
+            print(
+                f"WARN: Handle {handle} already exists, updating handle.",
+                file=sys.stderr,
+            )
 
         return f'https://hdl.handle.net/{res.json()["handle"]}'
 
@@ -100,7 +107,11 @@ class PidGenerator:
         """Form a Handle-compliant payload."""
         return {
             "values": [
-                {"index": 1, "type": "URL", "data": {"format": "string", "value": request.url}},
+                {
+                    "index": 1,
+                    "type": "URL",
+                    "data": {"format": "string", "value": str(request.url)},
+                },
                 *[
                     {
                         "index": i + 2,
