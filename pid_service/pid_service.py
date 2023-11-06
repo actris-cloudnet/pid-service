@@ -48,7 +48,7 @@ class PidGenerator:
             self._session.delete(session_url)
             self._session.close()
 
-    def generate_pid(self, request: PidRequest) -> str:
+    def generate_pid(self, request: PidRequest, reconnect: bool = False) -> str:
         """Generates PID from given UUID."""
 
         typeid = self._types[request.type]
@@ -57,20 +57,23 @@ class PidGenerator:
         handle = f"{self._settings.prefix}/{suffix}"
 
         try:
+            if reconnect:
+                self._session = self._init_session(requests.Session())
             server_url = f"{self._settings.handle_server_url}api/handles/{handle}"
             res = self._session.put(server_url, json=self._get_payload(request))
             res.raise_for_status()
         except HTTPError as err:
-            if res.status_code == 401:
-                self._session = self._init_session(requests.Session())
+            if err.response is not None and err.response.status_code == 401:
+                if not reconnect:
+                    return self.generate_pid(request, reconnect=True)
                 raise HTTPException(
                     status_code=503,
-                    detail="Upstream PID service failed with status 401, resetting session.",
+                    detail="Upstream PID service failed with status 401",
                 ) from err
-            raise HTTPException(
-                status_code=502,
-                detail=f"Upstream PID service failed with status {res.status_code}:\n{res.text}",
-            ) from err
+            message = "Upstream PID service failed"
+            if err.response is not None:
+                message += f" with status {err.response.status_code}:\n{err.response.text}"
+            raise HTTPException(status_code=502, detail=message) from err
         except (ConnectionError, TooManyRedirects, Timeout) as err:
             raise HTTPException(
                 status_code=503, detail="Could not connect to upstream PID service"
