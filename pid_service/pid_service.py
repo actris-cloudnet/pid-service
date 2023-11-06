@@ -1,5 +1,5 @@
 """pid-service module"""
-import sys
+import logging
 from enum import Enum
 from typing import List
 from uuid import UUID
@@ -80,10 +80,7 @@ class PidGenerator:
             ) from err
 
         if res.status_code == 200:
-            print(
-                f"WARN: Handle {handle} already exists, updating handle.",
-                file=sys.stderr,
-            )
+            logging.warning("Handle %s already exists, updating handle.", handle)
 
         return f'https://hdl.handle.net/{res.json()["handle"]}'
 
