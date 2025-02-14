@@ -74,7 +74,7 @@ class PidGenerator:
             if err.response is not None:
                 message += f" with status {err.response.status_code}:\n{err.response.text}"
             raise HTTPException(status_code=502, detail=message) from err
-        except (ConnectionError, TooManyRedirects, Timeout) as err:
+        except (requests.ConnectionError, TooManyRedirects, Timeout) as err:
             raise HTTPException(
                 status_code=503, detail="Could not connect to upstream PID service"
             ) from err
