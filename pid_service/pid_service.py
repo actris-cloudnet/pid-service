@@ -8,6 +8,8 @@ import requests
 from fastapi import HTTPException
 from pydantic import BaseModel, HttpUrl
 from requests import HTTPError, Session, Timeout, TooManyRedirects
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from .config import Settings
 
@@ -33,7 +35,7 @@ class PidRequest(BaseModel):
 class PidGenerator:
     """A class for interfacing with Handle-server."""
 
-    def __init__(self, settings: Settings, session=requests.Session()):
+    def __init__(self, settings: Settings, session: Session | None = None):
         self._settings = settings
         self._session = self._init_session(session)
         self._types = {
@@ -45,7 +47,7 @@ class PidGenerator:
     def __del__(self):
         if hasattr(self, "_session"):
             session_url = f"{self._settings.handle_server_url}api/sessions/this"
-            self._session.delete(session_url)
+            self._session.delete(session_url, timeout=60)
             self._session.close()
 
     def generate_pid(self, request: PidRequest, reconnect: bool = False) -> str:
@@ -58,9 +60,9 @@ class PidGenerator:
 
         try:
             if reconnect:
-                self._session = self._init_session(requests.Session())
+                self._session = self._init_session()
             server_url = f"{self._settings.handle_server_url}api/handles/{handle}"
-            res = self._session.put(server_url, json=self._get_payload(request))
+            res = self._session.put(server_url, json=self._get_payload(request), timeout=60)
             res.raise_for_status()
         except HTTPError as err:
             if err.response is not None and err.response.status_code == 401:
@@ -84,8 +86,10 @@ class PidGenerator:
 
         return f'https://hdl.handle.net/{res.json()["handle"]}'
 
-    def _init_session(self, session: Session) -> Session:
+    def _init_session(self, session: Session | None = None) -> Session:
         """Initialize session with Handle server."""
+        if session is None:
+            session = make_session()
         session.verify = self._settings.ca_verify
         session.headers["Content-Type"] = "application/json"
 
@@ -96,7 +100,7 @@ class PidGenerator:
             cert = (self._settings.certificate_only, self._settings.private_key)
         else:
             cert = None
-        res = session.post(session_url, cert=cert)
+        res = session.post(session_url, cert=cert, timeout=60)
         res.raise_for_status()
         session_id = res.json()["sessionId"]
         session.headers["Authorization"] = f"Handle sessionId={session_id}"
@@ -137,3 +141,17 @@ class PidGenerator:
                 },
             ]
         }
+
+
+class MyAdapter(HTTPAdapter):
+    def __init__(self):
+        retry_strategy = Retry(total=10, backoff_factor=0.1)
+        super().__init__(max_retries=retry_strategy)
+
+
+def make_session() -> requests.Session:
+    adapter = MyAdapter()
+    http = requests.Session()
+    http.mount("https://", adapter)
+    http.mount("http://", adapter)
+    return http
