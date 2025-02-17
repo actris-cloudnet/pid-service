@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="PID-SERVICE",
-    version="1.1.2",
+    version="1.1.3",
     install_requires=[
         "requests>=2.31.0,<2.32.0",
         "pydantic>=2.0.0,<3.0.0",
