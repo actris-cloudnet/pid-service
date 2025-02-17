@@ -1,7 +1,7 @@
 """pid-service module"""
+
 import logging
 from enum import Enum
-from typing import List
 from uuid import UUID
 
 import requests
@@ -29,7 +29,7 @@ class PidRequest(BaseModel):
     type: PidType
     uuid: UUID
     url: HttpUrl
-    data: List[PidData] = []
+    data: list[PidData] = []
 
 
 class PidGenerator:
@@ -62,7 +62,9 @@ class PidGenerator:
             if reconnect:
                 self._session = self._init_session()
             server_url = f"{self._settings.handle_server_url}api/handles/{handle}"
-            res = self._session.put(server_url, json=self._get_payload(request), timeout=60)
+            res = self._session.put(
+                server_url, json=self._get_payload(request), timeout=60
+            )
             res.raise_for_status()
         except HTTPError as err:
             if err.response is not None and err.response.status_code == 401:
@@ -74,7 +76,9 @@ class PidGenerator:
                 ) from err
             message = "Upstream PID service failed"
             if err.response is not None:
-                message += f" with status {err.response.status_code}:\n{err.response.text}"
+                message += (
+                    f" with status {err.response.status_code}:\n{err.response.text}"
+                )
             raise HTTPException(status_code=502, detail=message) from err
         except (requests.ConnectionError, TooManyRedirects, Timeout) as err:
             raise HTTPException(
@@ -84,7 +88,7 @@ class PidGenerator:
         if res.status_code == 200:
             logging.warning("Handle %s already exists, updating handle.", handle)
 
-        return f'https://hdl.handle.net/{res.json()["handle"]}'
+        return f"https://hdl.handle.net/{res.json()['handle']}"
 
     def _init_session(self, session: Session | None = None) -> Session:
         """Initialize session with Handle server."""

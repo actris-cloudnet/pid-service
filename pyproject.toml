@@ -1,6 +1,9 @@
 [tool.mypy]
 plugins = "pydantic.mypy"
 
+[tool.ruff.lint]
+select = ["I", "E", "F", "B", "UP"]
+
 [tool.release-version]
 filename = "setup.py"
 pattern = "version=\"(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)\""

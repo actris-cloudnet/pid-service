@@ -2,7 +2,6 @@ import pytest
 import requests
 import requests_mock
 from fastapi import HTTPException
-from pydantic import ValidationError
 
 from pid_service.config import Settings
 from pid_service.pid_service import PidGenerator, PidRequest
@@ -41,7 +40,12 @@ class TestPidService:
             "PUT",
             "mock://hdl.svc/api/handles/21.T12995/1.be8154c1a6aa4f44",
             additional_matcher=validate_request(
-                [("URL", "http://example.org/file/be8154c1-a6aa-4f44-b953-780b016987b5")]
+                [
+                    (
+                        "URL",
+                        "http://example.org/file/be8154c1-a6aa-4f44-b953-780b016987b5",
+                    )
+                ]
             ),
             json={"responseCode": 1, "handle": "21.T12995/1.be8154c1a6aa4f44"},
         )
@@ -62,7 +66,12 @@ class TestPidService:
             "PUT",
             "mock://hdl.svc/api/handles/21.T12995/2.ce8154c1a6aa4f44",
             additional_matcher=validate_request(
-                [("URL", "http://example.org/collection/ce8154c1-a6aa-4f44-b953-780b016987b5")]
+                [
+                    (
+                        "URL",
+                        "http://example.org/collection/ce8154c1-a6aa-4f44-b953-780b016987b5",
+                    )
+                ]
             ),
             json={"responseCode": 1, "handle": "21.T12995/2.ce8154c1a6aa4f44"},
         )
@@ -83,7 +92,12 @@ class TestPidService:
             "PUT",
             "mock://hdl.svc/api/handles/21.T12995/3.8c1680f6b530499a",
             additional_matcher=validate_request(
-                [("URL", "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf")]
+                [
+                    (
+                        "URL",
+                        "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+                    )
+                ]
             ),
             json={"responseCode": 1, "handle": "21.T12995/3.8c1680f6b530499a"},
         )
@@ -105,7 +119,10 @@ class TestPidService:
             "mock://hdl.svc/api/handles/21.T12995/3.8c1680f6b530499a",
             additional_matcher=validate_request(
                 [
-                    ("URL", "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf"),
+                    (
+                        "URL",
+                        "http://example.org/instrument/8c1680f6-b530-499a-b90c-ccb40d47e2bf",
+                    ),
                     ("msg", "hello world"),
                 ]
             ),
@@ -126,7 +143,9 @@ class TestPidService:
     def test_raises_error_on_failed_request(self, session_adapter):
         session, adapter = session_adapter
         adapter.register_uri(
-            "PUT", "mock://hdl.svc/api/handles/21.T12995/1.ac310789d9844172", status_code=403
+            "PUT",
+            "mock://hdl.svc/api/handles/21.T12995/1.ac310789d9844172",
+            status_code=403,
         )
 
         request = {
@@ -148,7 +167,9 @@ def validate_request(expected_values):
             data = request.json()
         except ValueError:
             return False
-        for (expected_type, expected_value), item in zip(expected_values, data["values"]):
+        for (expected_type, expected_value), item in zip(
+            expected_values, data["values"]
+        ):
             if item["type"] != expected_type or item["data"]["value"] != expected_value:
                 return False
         return True
